@@ -92,7 +92,6 @@ button:disabled{opacity:.55;cursor:not-allowed}
     </section>
   </div>
 
-
   <div class="sheet-link-wrap">
     <a class="sheet-link" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTHA4Hi8jKIPocb-YX0D3p4CsJ8Q1Ts18S5CVhEtTGDUNS776hWTHRWpCvCZDSoqxIvLT1YEIj97BmN/pubhtml" target="_blank" rel="noopener noreferrer">설홍님 노래 목록</a>
   </div>
@@ -103,6 +102,12 @@ button:disabled{opacity:.55;cursor:not-allowed}
 </div>
 
 <script>
+// 실시간 데이터 갱신을 위한 필수 전역 변수 및 상수 선언
+let lastDataSignature = "";
+let liveRequestInProgress = false;
+let liveRefreshTimer = null;
+const LIVE_REFRESH_INTERVAL_MS = 60000;
+
 const API_URL ="https://script.google.com/macros/s/AKfycbyy4op8HyQN1gJGlZYN7u4OkDCeIPGQT5rP5k6-4qUUR7AXJEuDEpaih4sGYn2ofGzR/exec";
 const FALLBACK_SONGS=["만개화-안예은", "not a dream-송소희", "마지막 재회-던파", "꽃이 되어줘-녹황색사회", "사슴신-송소희", "꽃불-심규선", "항해-김세정", "난설헌-심규선", "휠릴리-이수영", "달에지다-베이지", "find  the way-바다", "물만난물고기-악뮤", "당신의 연인이 되고 싶어-쵸쿠메이", "피날레-에일", "하늘바라기-정은지", "상사화-안예은", "아라리-심규선", "달무리-송소희", "낮에 뜨는 달-안예은", "홍연-안예은", "너를 위해-보보경심", "구르미 그린 달빛-거미", "물고기자리-이안", "헤픈 우연-헤이즈", "선물-멜로망스", "금요일에 만나요-아이유", "사건의 지평선-윤하", "펫-10cm", "흥칫뿡-쪼꼬미", "못 죽는 기사와 비단 요람-루시", "야래향-심규선", "출항-안예은", "월령-심규선", "요란-심규선", "화조도-심규선", "하루끝-아이유", "너랑나-아이유", "사랑의 배터리-홍진영", "나는 아픈건 딱 질색이니까-아이들", "why-태연", "stargazer-이세계아이돌", "스물다섯 스물하나-자우림", "어디에도-mc the max", "와-이정현", "step-카라", "창귀-안예은", "아이돌-요아소비", "U&I-에일리", "한숨-이하이", "입술사이-아이유", "홍련화-lisa", "밤편지-아이유", "나에게로의 초대", "너 그리고 나-여자친구", "피아니시모-체리필터", "드라우닝-WOODZ", "wow thing-슬기", "내손을 잡아-아이유", "비행운-문문", "시대를 초월한 마음", "꽃-아이유", "all for you-쿨", "trouble maker-트러블 메이커", "심장이 없어-에이트", "잔소리-아이유", "애상-쿨", "한여름의 꿀-레이나", "잊지 말아요-백지영", "바다-정은지", "사랑은 은하수 다방 앞에서 만나-10cm", "사무라이 하트-spyair", "휘파람-이문세", "행복한 나를-허각", "파탈리테-심규선", "사랑했나봐-YB", "심해소녀-하쿠네 미쿠", "호시아이-구루타밍", "매직 카펫 라이드-자우림", "타상연화-쏘아불꽃", "서커스-태연", "꿈과 벚나무-아오키 겟코", "괴물이 피는 숲-미로", "한숨-이하이", "좋은날-아이유", "계절범죄-미로", "사랑가-춘향가", "월요일 좋아-스폰지송", "이자벨라의 자장가-약속의 네버랜드", "후라이의 꿈-악뮤", "안녕 디지몬(엔딩)-장숙희", "바람이 잠든 곳으로-블소ost", "달무리-송소희", "능소화-안에은", "달과 6펜스-심규선", "어릿광대를 보내주오-심규선", "이것은 아마 마지막 꽃잎-심규선", "비행기-거북이", "당고대가족", "역광-ado", "죽을만큼 아파서-mc몽", "첫눈처럼 너에게 가겠다-에일리", "DEAR-매드소울차일드", "jane doe-요네즈 켄시", "마음짓기-하나땅", "IRIS OUT-요네즈 켄시", "출발-김동률", "수고했어 오늘도-옥상달빛", "별빛달빛-시스타", "푸르름이 사는 곳-키타니 타츠야", "파도혁명-음율", "love wins all-아이유", "눈물참기-QWER", "양자택일", "호랑수월가-탑현", "고민중독-QWER", "겨울봄-이세계아이돌", "악마의 아이-진격거", "빵빵하게-강성호", "unravel-도쿄구울", "be my light-이세계아이돌", "소다팝-사자보이즈", "고양이인줄 알았는데 연금술사-밀크라지", "영물이다-이오몽", "초담-이오몽", "피차일반-음율", "예뻣어-데이식스", "귀신의 잔치-토모나리 소라", "눈이 오잖아-이무진", "나의 옛날이야기-아이유", "신호등-이무진", "부엉이-코키아", "숲속의 작은 레스토랑", "스키다카라-유이카", "선잠-leina", "happy-데이식스", "눈의꽃-박효신", "미리메리크리스마스-아이유", "문어의 꿈-안예은", "빌런-스텔라장", "보여줄게-에일리", "참새-스즈메", "sparkle-너의 이름은", "miss you-소유", "탄지로의 노래-귀칼1기ed", "소나기-I.O.I", "발묘-메구리네 루카", "경화수월-마후마후", "지름길로 가고파-보노보노", "rain-강철", "성간비행-나카지마 메구미", "더위 먹은 갈매기-돌브레인", "Good goodbye-화사", "고추참치-돌카스", "내일또보자-ene", "작은 하마 이야기", "도리토스송-돌카스", "소녀-노홍철", "요리왕비료-배연희", "카레-노라조", "Hello Mr. my yesterday-코난", "취기를 빌려-산들", "그날그꽃", "장산범-씨유", "귀여워서 미안해-허니웍스", "lemon-요네즈켄시", "오빠야-신현희와김루트", "insane-black gryph0n", "여봉봉-아율", "오또케송", "모찌송", "토끼-뇌태풍", "돌핀-오마이걸", "summertime", "connect", "melty-베이블루", "shake it-시스타", "꿈을열어줘-베이블루", "기본벨소리-베이블루", "빨간바다-베이블루", "be happy-베이블루", "UNISON SQUARE-혈의전선ed", "god knows-스즈미야 하루히", "marry me-ellegarden", "고양이 소리를 따라해보자-소봉봉", "NISON SQUARE-혈의전선ed", "괴물-요아소비", "the fox-ylvis", "Celebrity-아이유", "Kissing You-소녀시대", "8282.0-다비치", "베텔기우스-유루리", "여행-볼빨간 사춘기", "천몽지로-송소희", "오렌지-4월구라", "아이네 클라이네-요네즈 켄시", "잉어왕-안예은", "어이널사-악뮤", "모르시나요-다비치", "널 사랑하지 않아-어반자카파", "말해줘-요루시카", "DJ조선-이오몽", "해킹송-돌카스", "감자튀김송-돌카스", "Avid-에이티식스", "곰 세마리", "바둑이 방울", "노는게 제일 좋아-뽀로로", "취한 줄을 모르고-메가테라제로", "마루노우치 새디스틱-시이나 링고", "케세라세라-그린애플", "봄날-방탄소년단", "mela!-녹황색사회", "사랑하게 될거야-한로로", "바니걸-아카사키", "사계-태연", "tot musica-ado", "나의 옛날이야기-아이유", "저녁 하늘-에일리", "legends never die-롤", "I-태연", "Star Walkin-롤", "Rewrite the stars-Zendaya", "Misty Rainbow-이세계아이돌", "Tears-소찬휘", "인연-이선희", "인생의 회전목마-히사이시 조", "쉬즈곤-스틸하트", "레오-유우리", "폰서트-10cm", "작은별-악동뮤지션", "주문-동방신기", "계절범죄-미로", "애국가(락)-YB", "그저 네게 맑아라-요루시카", "드로우닝-우즈", "아름다운 나라-신문희", "시작의 아이-마크툽", "별무늬 비너스-aimer", "나의 마음을 담아-달빛천사", "Love Chronicle-달빛천사", "Myself-달빛천사", "심야의 아이-심규선", "호랑나비-김흥국", "숲-최유리", "맹그로브-윤하", "불장난-BLACKPINK", "한 페이지가 될 수 있게-데이식스", "밤의 정원-심규선", "내가 죽으려고 생각한 것은-나카시마 미카", "희재-성시경"];
 const FALLBACK_HAEGEUM=["호랑수월가-탑현", "꽃이 피고 지듯이-조승우", "아름다운 나라-신문희", "fly me to the moom", "히로시의 회상-짱구", "여우비-이선희", "시간을 거슬러-린", "시대를 초월한 마음-이누야샤", "비익련리-추노", "인연-이선희", "불꽃-귀칼", "레오-유우리", "휠릴리-이수영", "깊은 밤을 날아서-이문세", "너에게 닿기를-10cm", "반야심경 리믹스", "이마트 노래", "개화-루시", "Dubidubidu-Christell", "이마트 노래(속주)", "캐리비안의 해적", "nyan cat!", "lost stars-Adam Levine", "legends never die-롤", "big sleep-신세계", "스즈메-문단속", "노는게 제일 좋아-뽀로로", "우마뾰이-우마무스메", "홍창기 응원가-lg", "공중악사-전우치", "용기의 노래-로스트아크", "10000 Hours-Dan + Shay & Justin Bieber", "먼길-왕의남자", "꽃길-황진이", "first step-인터스텔라", "안녕 디지몬", "스물다섯 스물하나-자우림", "만개화-안예은", "밀양아리랑", "my heart will go on-셀린 디온", "one summer's day-히사이시 조", "인생의 회전목마-히사이시 조", "바람이 지나가는 길-히사이시 조", "모노노케 히메-히사이시 조", "선잠-레이나", "아라리-심규선", "내 이름 맑음-QWER", "Merry Christmas Mr. Lawrence-류이치 사카모토", "the show-lenka", "funny-zedd", "라 라 라스푸틴", "7years-Lukas Graham", "창백한 푸른 점-심규선", "폭풍의 언덕-심규선", "이 실없이 멋진 세상은, 나를 위해 있어-유이콘누", "라 캄파넬라", "shape of you-ed sheeran", "stay-zedd", "i really want to stay at your hoouse-사펑", "closer-chainsmokers", "난데모나이야-너의이름은", "에어맨이 쓰러지지 않아", "신죠오 사사게요-진격거", "小喋日和-코미양 커뮤증", "아무노래-지코", "브레스 오브 더 와일드-젤다가 그 초록색 옷 입은애죠", "처형곡-죠죠", "一笑江湖-DJ弹鼓版", "마지막 재회-던파", "sparkle-너의 이름은", "폰서트-10cm", "천공의 성 라퓨타", "움파룸파-찰리 초콜릿", "this is me-위대한 쇼맨", "예뻣어-데이식스", "dangerously-charlie puth", "데스노트-뮤지컬 데스노트", "언제나 몇 번이라도-히사이시 조", "만찬가-츠키", "바이러스-베토벤", "황금별-뮤지컬 모차르트", "시달소-시달소ost", "꿈과 벚나무-아오키 겟코", "항해-김세정", "창귀-안예은", "화조도-심규선", "계절은 차례차례 죽어간다-아마자라시", "이화도-천애명월도", "이자벨라의 자장가-약속의 네버랜드", "Good goodbye-화사", "물만난물고기-악뮤", "악마의 아이-진격거", "양자택일", "Bling bang bang born-마슐", "득근기도문-김버거", "꽃이 되어줘-녹황색사회", "그대는 그렇게-블소ost", "상처투성이-금색의 갓슈벨op", "베리멜론-금색의 갓슈벨op", "당신의 연인이 되고 싶어-쵸쿠메이", "바람이 잠든 곳으로-블소ost", "출항-안예은", "A Whole new world-알라딘", "첫눈처럼 너에게 가겠다-에일리", "all i want for christmas is you-대충 캐롤", "파도혁명-음율", "셔터-유우리", "꽃날-황진이ost", "True-사일런트 힐", "적월-이오몽", "바운디-체인쏘", "고스타그램-심통봇", "nothing-바밍", "융터르-clth", "to make the end of battle-ys etenal 2", "다이아몬드 크레바스-마크로스 프론티어", "nameless-이세계아이돌", "버터플라이-디지몬", "돌핀 돌핀-쇼츠 그노래", "수련의 숲-메이플", "부엉이-코키아", "밤양갱-비비", "from there-지브리", "무희-vaundy", "나의 아름다운 악의 꽃-코드기어스 OST", "Continued Story-코드기어스 OST", "다양성-체인쏘맨", "Driver's high-L'Arc~en~Ciel", "KICK BACK-요네즈 켄시", "Dance of Curse-에스카플로네 OST", "대취타", "메테오-창모", "잊혀지지 못할 언어-dazbee", "오렌지-4월은 너의 거짓말", "새벽의 진혼가-진격거", "고민중독-QWER", "잔혹한 천사의 테제-에반게리온", "rain-강철", "레전드 네버 다이-롤", "battle of rose-로젠메이든 ost", "world is mine-하츠네 미쿠", "시간을 거슬러-린", "그리워 그리워서-활치열", "그 남자-시크릿가든ost", "상들리에-키노피오", "잊지말아요-백지영", "입대와 전역", "향수-eito", "사랑이 할 수 있는 일이 아직 있을까-날씨의 아이ost", "자상무색-하츠네 미쿠", "nxde-아이들", "개다-프리랜2기op", "도원경-빅스", "and july-헤이즈", "그대라는 시-태연", "얼음연못-두번째달", "빨간바다-베이블루", "위쳐 ost-jaskier", "who am i-레미제라블", "sleep well-파피플레이타임ost", "으르렁(요들송)-엑소", "7월에 피는 꽃처럼-세븐나이츠ost", "도파민-wing", "Despacito-Luis Fonsi", "우리는 호쇼해적단-호쇼 마린", "심해소녀-하쿠네 미쿠", "다시만난세계-소녀시대", "나는 아픈건 딱 질색이니까-아이들", "Hello Mr. my yesterday-코난", "우리는 모두 친구-포켓몬스터", "나비보벳따우", "last stardust-페스나", "we are-one ok rock", "히로인-back number", "my dearest-supercell", "잔향산가-귀칼2기 op", "피치송-잭블랙", "rain-류이치 사카모노", "사랑은 혼돈의 노예-기어와라! 냐루코 양", "Drowning-키노피오", "귀엽기만하면 안되나요-큐티스트릿", "민요의 향연-임교민", "qiu qiu-숏츠노래", "워씽시", "사쿠란보", "복숭아-아이유", "imagination-spyair", "나이트댄서-이마세", "프레디ost", "스타크래프트 테란-스타", "Milky Way Hitchhiker-Plum", "제제로감-슬램덩크 극장판", "Milky Way Hitchhiker-Plum", "see you again", "Rainbow Chaser-Plum", "Can't Wait Til Christmas-우타다 히카루", "잠깐 시간 될까-이무진", "not a dream-송소희", "unbreakable-니케 ost", "Shock The World(국악)", "Shock The World(리믹스)", "월하의 그대에게", "viva la vida-coldplay", "satellites-니케 ost", "Candy Thief(아카펠라)-BEATPELLA HOUSE", "빛 속을 걷다-신시아", "마법의 성-mc sniper", "무채화-Plum", "Photonium-Plum", "Arrival-Plum", "봄봄봄-로이킴", "맹그로브-윤하", "pretender-숏츠 굿바이!", "black hole-윤하", "최고의 짝사랑-채운국이야기 ost", "서울의 달-김건모", "꽃불-심규선", "나는 최강-ado", "시간의 비, 최종전쟁-월피스 카터", "눈물의 씨앗 웃음의 꽃-그렌라간", "안녕-조이", "난설헌-심규선", "나의 마음을 담아-달빛천사", "귀여워서 미안해-허니웍스", "짝사랑-aimer", "사랑하게 될거야-한로로", "숲-최유리", "Sacrifice-G.E.M", "Vogel Im Kafig-진격거", "Days Pass-핀볼 긴장감 노래", "멜리사-강연금", "마리골드-아이묭", "오리온-요네즈 켄시", "오도루프-프레데릭", "disillusion-페스나 op", "별이 반짝이는 이런 밤에-supercell", "smile for you-이세계아이돌", "Last Carnival", "낙화-신시아", "발묘-메구리네 루카", "홍순-바닐라무드", "시작의 바람이여-채운국 이야기"];
@@ -155,7 +160,7 @@ function roll(list,resultId,cardId,buttonId){
   card.classList.add("spinning");
 
   let ticks=0;
-  const maxTicks=16; // 기존 약 1.8초의 절반 수준
+  const maxTicks=16; 
   let delay=28;
 
   const step=()=>{
@@ -181,44 +186,23 @@ function roll(list,resultId,cardId,buttonId){
 document.getElementById("songBtn").onclick=()=>roll(songList,"songResult","songCard","songBtn");
 document.getElementById("haeBtn").onclick=()=>roll(haeList,"haeResult","haeCard","haeBtn");
 
-function parseGviz(text){
-  const m=text.match(/setResponse\((.*)\);?\s*$/s);
-  if(!m)throw new Error("응답 형식을 해석하지 못했습니다.");
-  return JSON.parse(m[1]);
-}
-
-  function applyLiveGachaData(data) {
+function applyLiveGachaData(data) {
   if (!data || data.success !== true) {
-    throw new Error(
-      data?.error || "API 응답이 올바르지 않습니다."
-    );
+    throw new Error(data?.error || "API 응답이 올바르지 않습니다.");
   }
 
-  if (
-    !Array.isArray(data.songs) ||
-    !Array.isArray(data.haegeum)
-  ) {
-    throw new Error(
-      "노래 또는 해금 목록의 형식이 올바르지 않습니다."
-    );
+  if (!Array.isArray(data.songs) || !Array.isArray(data.haegeum)) {
+    throw new Error("노래 또는 해금 목록의 형식이 올바르지 않습니다.");
   }
 
-  const newSongs = data.songs
-    .map(item => String(item).trim())
-    .filter(Boolean);
-
-  const newHaegeum = data.haegeum
-    .map(item => String(item).trim())
-    .filter(Boolean);
+  const newSongs = data.songs.map(item => String(item).trim()).filter(Boolean);
+  const newHaegeum = data.haegeum.map(item => String(item).trim()).filter(Boolean);
 
   if (!newSongs.length || !newHaegeum.length) {
     throw new Error("API에서 받은 목록이 비어 있습니다.");
   }
 
-  const newSignature = JSON.stringify([
-    newSongs,
-    newHaegeum
-  ]);
+  const newSignature = JSON.stringify([newSongs, newHaegeum]);
 
   if (newSignature === lastDataSignature) {
     return;
@@ -230,14 +214,11 @@ function parseGviz(text){
 
   setCounts();
 
-  console.log(
-    "최신 가챠 목록 반영 완료",
-    {
-      songs: songList.length,
-      haegeum: haeList.length,
-      updatedAt: data.updatedAt
-    }
-  );
+  console.log("최신 가챠 목록 반영 완료", {
+    songs: songList.length,
+    haegeum: haeList.length,
+    updatedAt: data.updatedAt
+  });
 }
 
 function requestLiveGachaData() {
@@ -247,21 +228,12 @@ function requestLiveGachaData() {
 
   liveRequestInProgress = true;
 
-  const callbackName =
-    "__seolhongGachaCallback_" +
-    Date.now() +
-    "_" +
-    Math.random().toString(36).slice(2);
-
+  const callbackName = "__seolhongGachaCallback_" + Date.now() + "_" + Math.random().toString(36).slice(2);
   const script = document.createElement("script");
-
   let completed = false;
 
   function cleanup() {
-    if (completed) {
-      return;
-    }
-
+    if (completed) return;
     completed = true;
     liveRequestInProgress = false;
 
@@ -283,29 +255,17 @@ function requestLiveGachaData() {
 
   window[callbackName] = function(data) {
     clearTimeout(timeoutId);
-
     try {
       applyLiveGachaData(data);
     } catch (error) {
-      console.warn(
-        "최신 목록 적용에 실패했습니다.",
-        error
-      );
+      console.warn("최신 목록 적용에 실패했습니다.", error);
     } finally {
       cleanup();
     }
   };
 
   const separator = API_URL.includes("?") ? "&" : "?";
-
-  script.src =
-    API_URL +
-    separator +
-    "callback=" +
-    encodeURIComponent(callbackName) +
-    "&t=" +
-    Date.now();
-
+  script.src = API_URL + separator + "callback=" + encodeURIComponent(callbackName) + "&t=" + Date.now();
   script.async = true;
 
   script.onerror = function() {
